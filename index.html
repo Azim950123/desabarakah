@@ -105,6 +105,16 @@ a{ color:inherit }
 .seg-btn[aria-pressed="true"]{ background:var(--surface); color:var(--fg); box-shadow:0 1px 3px rgba(0,0,0,.12) }
 .todo{ margin:0; padding-left:22px; display:flex; flex-direction:column; gap:8px }
 .todo li::marker{ font-weight:800; color:var(--acc) }
+.pay{ width:100%; display:flex; flex-direction:column; align-items:center; gap:12px; border:1.5px solid var(--line); border-radius:var(--r); padding:18px; background:var(--bg) }
+.pay-head{ align-self:stretch; display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap }
+.pay-head b{ font-family:var(--fd); font-size:1.2rem; font-weight:600 }
+.pay-head span{ color:var(--muted); font-size:.88rem }
+.qr{ width:100%; max-width:280px; height:auto; border-radius:12px; background:#fff; display:block }
+.pay-name{ margin:0; font-weight:800; text-align:center }
+.pay .note{ background:var(--surface) }
+.more{ width:100%; border-top:1px solid var(--line); padding-top:14px }
+.more summary{ cursor:pointer; font-weight:800; color:var(--acc); min-height:32px }
+.more[open]{ display:flex; flex-direction:column; gap:12px }
 
 .contact{ display:flex; flex-direction:column; gap:12px }
 .who{ display:flex; align-items:center; gap:14px }
@@ -357,7 +367,7 @@ function vHome(){
   <aside class="side">
     <section class="card book">
       <div class="price"><small>Harga</small><b>${rm(PRICE)} <span>/ semalaman</span></b></div>
-      <p class="muted-s">Daftar masuk 2:00 ptg · Keluar 12:00 tgh</p>
+      <p class="muted-s">Daftar masuk 2:00 ptg · Keluar 12:00 tgh<br>Bayaran mudah melalui QR DuitNow</p>
       <button class="btn primary full" data-act="start">Tempah sekarang ›</button>
       <a class="btn wa full" href="${WA_ASK}" target="_blank" rel="noopener">${ICON.wa} Tanya dulu di WhatsApp</a>
     </section>
@@ -457,7 +467,7 @@ function vReview(){
     <div><dt>${rm(PRICE)} × ${n} malam</dt><dd>${rm(PRICE*n)}</dd></div>
   </dl>
   <div class="total"><span>Jumlah</span><b>${rm(PRICE*n)}</b></div>
-  <p class="note">Bila tekan butang hijau, WhatsApp akan buka dengan maklumat tempahan yang sudah siap ditulis. Anda cuma perlu tekan <b>Hantar</b> di WhatsApp. ${OWNER} akan balas untuk sahkan tarikh dan cara bayaran.</p>`;
+  <p class="note">Bila tekan butang hijau, WhatsApp akan buka dengan maklumat tempahan yang sudah siap ditulis. Anda cuma perlu tekan <b>Hantar</b> di WhatsApp. Selepas ${OWNER} sahkan tarikh, bayaran dibuat melalui <b>QR DuitNow</b> yang akan dipaparkan selepas ini.</p>`;
 }
 function vWizard(){
   const key=STEPS[S.step],last=S.step===STEPS.length-1;
@@ -476,18 +486,41 @@ function vWizard(){
     </div>
   </section>`;
 }
+const QR_SRC='icons/qr-bayaran.png', QR_NAME='HAJI MOHD BERKURI BIN AB', QR_BANK='Bank Islam · DuitNow QR';
+function vPay(){
+  const resit=waLink(`Assalamualaikum Haji Berkuri, ini resit bayaran untuk tempahan Homestay Desa Barakah.\nKod tempahan: ${S.code}\nNama: ${S.name.trim()}`);
+  return `<div class="pay">
+    <div class="pay-head"><b>Bayaran melalui QR</b><span>${QR_BANK}</span></div>
+    <img class="qr" src="${QR_SRC}" alt="QR DuitNow untuk bayaran kepada ${QR_NAME}, Bank Islam" width="480" height="660">
+    <div class="cta-bar two" style="width:100%">
+      <a class="btn primary" href="${QR_SRC}" download="QR-Bayaran-Homestay-Desa-Barakah.png">Muat turun QR</a>
+      <a class="btn wa" href="${resit}" target="_blank" rel="noopener">${ICON.wa} Hantar resit</a>
+    </div>
+    <p class="note"><b>Cara bayar:</b> Buka app bank atau e-wallet anda, pilih <b>Scan QR / DuitNow QR</b>. Kalau QR ini di telefon yang sama, tekan <b>Muat turun QR</b> dahulu, kemudian dalam app bank pilih gambar QR dari galeri. Di iPhone, boleh juga tekan lama pada gambar QR dan pilih <b>Save to Photos</b>.</p>
+  </div>`;
+}
 function vDone(){
   return `<section class="card done narrow">
     <div class="tick"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></div>
     <h2 class="steptitle" id="stepTitle" tabindex="-1">Terima kasih, ${esc(S.name.trim().split(' ')[0])}!</h2>
     <div class="linkbox" style="width:100%"><span>Kod tempahan: ${S.code}</span></div>
-    <p style="margin:0">Pastikan anda sudah tekan <b>Hantar</b> di WhatsApp. ${OWNER} akan balas untuk sahkan tarikh dan cara bayaran.</p>
-    <p class="note" style="width:100%">WhatsApp tidak terbuka? Salin mesej di bawah dan hantar ke <b>${WA_SHOW}</b>.</p>
-    <pre class="msg" id="msg">${esc(bookingText())}</pre>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="small-btn" data-act="copy-msg">Salin mesej</button>
-      <button class="small-btn" data-act="copy-num">Salin nombor</button>
-    </div>
+    <h3 style="font-size:1.2rem">Apa perlu dibuat sekarang</h3>
+    <ol class="todo">
+      <li>Pastikan anda sudah tekan <b>Hantar</b> di WhatsApp.</li>
+      <li>Tunggu ${OWNER} balas untuk <b>sahkan tarikh</b>.</li>
+      <li>Selepas disahkan, bayar <b>${rm(PRICE*nights(S.in,S.out))}</b> guna QR di bawah.</li>
+      <li>Hantar <b>resit bayaran</b> ke WhatsApp ${OWNER} bersama kod <b style="white-space:nowrap">${S.code}</b>.</li>
+    </ol>
+    ${vPay()}
+    <details class="more">
+      <summary>WhatsApp tidak terbuka tadi?</summary>
+      <p class="note">Salin mesej di bawah dan hantar ke <b>${WA_SHOW}</b>.</p>
+      <pre class="msg" id="msg">${esc(bookingText())}</pre>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="small-btn" data-act="copy-msg">Salin mesej</button>
+        <button class="small-btn" data-act="copy-num">Salin nombor</button>
+      </div>
+    </details>
     <button class="btn ghost" data-act="reset">Kembali ke halaman utama</button>
   </section>`;
 }
