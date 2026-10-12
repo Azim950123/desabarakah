@@ -283,7 +283,7 @@ function vShareInstall(){
 
 /* ---------- Buku tempahan (Google Sheet) ----------
    Tampal link "Web app" dari Google Apps Script di bawah (berakhir dengan /exec). */
-const API_URL='';
+const API_URL='https://script.google.com/macros/s/AKfycbw9U77F1-YFS7LyyFuCbL7EdEQCtw37G4qsWMgMhHJyI668z6DdYFkeOWzeTohl9jXsIg/exec';
 let BOOKED=new Set(), datesState=API_URL?'loading':'off';
 const conflict=(a,b)=>{for(let d=a;d<b;d=addDays(d,1))if(BOOKED.has(d))return true;return false};
 function loadDates(){
