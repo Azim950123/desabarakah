@@ -156,6 +156,8 @@ details.help summary{ cursor:pointer; font-weight:800; color:var(--acc); min-hei
 .spin{ width:20px; height:20px; border:3px solid var(--line); border-top-color:var(--acc); border-radius:50%; animation:sp 1s linear infinite }
 @keyframes sp{ to{ transform:rotate(360deg) } }
 @media (prefers-reduced-motion:reduce){ .spin{ animation:none } }
+.install{ border:2px solid var(--acc) }
+.linkbtn{ align-self:flex-start; background:none; border:0; padding:4px 0; color:var(--muted); font-weight:700; text-decoration:underline; cursor:pointer; font-size:.9rem }
 .foot{ text-align:center; color:var(--muted); font-size:.85rem; margin:0 }
 </style>
 </head>
@@ -231,7 +233,7 @@ function msgCancelled(b){return `Assalamualaikum ${b.nama}. Harap maaf, tempahan
 
 /* ---------- Views ---------- */
 function vLogin(){
-  return `<section class="card login">
+  return `<div class="login" style="display:flex;flex-direction:column;gap:18px">${vInstall()}<section class="card">
     <h1 style="font-size:1.6rem">Selamat datang, Haji</h1>
     <p class="muted" style="margin:-6px 0 0">Masukkan PIN untuk urus tempahan Homestay Desa Barakah.</p>
     <form id="loginForm" style="display:flex;flex-direction:column;gap:14px">
@@ -241,7 +243,7 @@ function vLogin(){
       ${S.err?`<p class="err" role="alert">${esc(S.err)}</p>`:''}
       <button class="btn primary full" type="submit" ${S.busy?'disabled':''}>${S.busy?'Sedang masuk…':'Masuk'}</button>
     </form>
-  </section>`;
+  </section></div>`;
 }
 function vTiles(){
   const t=today(),m=t.slice(0,7),bs=bookings();
@@ -364,15 +366,48 @@ function vBlok(){
       :'<p class="muted" style="margin:0">Tiada tarikh diblok.</p>'}
   </section>`;
 }
+/* ---------- Panduan pasang app (ikut jenis telefon & browser) ---------- */
+const UA=navigator.userAgent||'';
+const IS_IOS=/iphone|ipad|ipod/i.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const IS_ANDROID=/android/i.test(UA);
+const IN_APP=/FBAN|FBAV|FB_IAB|Instagram|WhatsApp|Line\/|Telegram|; wv\)/i.test(UA);
+const IS_SAMSUNG=/SamsungBrowser/i.test(UA);
+const ADMIN_URL='https://azim950123.github.io/desabarakah/admin/';
+let INSTALLED=false;try{INSTALLED=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){}
+let hideInstall=false;try{hideInstall=localStorage.getItem('dbadmin-hide-install')==='1'}catch(e){}
+const SHARE_IOS='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px" aria-label="ikon Kongsi"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11v9h12v-9"/></svg>';
 function vInstall(){
-  return `<details class="help card">
-    <summary>Pasang app ini di skrin telefon</summary>
-    ${window.__ip?'<button class="btn primary full" data-act="install" style="margin-top:12px">Pasang app sekarang</button>':''}
-    <p style="margin:12px 0 0;font-weight:800">Telefon Android (Chrome)</p>
-    <ol class="todo"><li>Tekan <b>⋮</b> (tiga titik) di atas kanan.</li><li>Pilih <b>Install app</b> atau <b>Add to Home screen</b>.</li><li>Tekan <b>Install</b>.</li></ol>
-    <p style="margin:12px 0 0;font-weight:800">iPhone (Safari)</p>
-    <ol class="todo"><li>Tekan butang <b>Kongsi</b> (petak dengan anak panah ke atas).</li><li>Pilih <b>Add to Home Screen</b>.</li><li>Tekan <b>Add</b>.</li></ol>
-  </details>`;
+  if(INSTALLED||window.__installedNow)return window.__installedNow?'<p class="okmsg">App sudah dipasang. Cari ikon <b>DB Admin</b> (hijau gelap dengan kunci kuning) di skrin telefon.</p>':'';
+  if(hideInstall)return '';
+  let body='';
+  if(!IS_IOS&&!IS_ANDROID){
+    body=`<p style="margin:0">Anda sedang guna komputer. Untuk pasang di telefon, <b>imbas QR ini dengan kamera telefon</b>. Link akan terus buka dalam browser telefon.</p>
+      <img src="icons/admin-link-qr.png" alt="QR untuk buka app Haji Berkuri di telefon" width="220" height="220" style="width:200px;height:auto;align-self:center;border-radius:12px">`;
+  }else if(IN_APP){
+    body=`<p class="warnmsg">Link ini sedang dibuka dalam WhatsApp atau Facebook. App hanya boleh dipasang dari ${IS_IOS?'<b>Safari</b>':'<b>Chrome</b>'}.</p>
+      <ol class="todo"><li>Tekan <b>${IS_IOS?'ikon kompas atau "Open in Safari"':'⋮'}</b> di ${IS_IOS?'bawah kanan':'atas kanan'} skrin.</li>
+      <li>Pilih <b>${IS_IOS?'Open in Safari':'Buka dalam Chrome / Open in Chrome'}</b>.</li><li>Halaman ini akan dibuka semula, dan butang pasang akan muncul.</li></ol>
+      <button class="btn ghost full" data-act="copy-admin">Salin link (tampal dalam ${IS_IOS?'Safari':'Chrome'})</button>`;
+  }else if(window.__ip){
+    body=`<p style="margin:0">Tekan butang di bawah, kemudian tekan <b>Install</b> / <b>Pasang</b>.</p>
+      <button class="btn primary full" data-act="install">Pasang app sekarang</button>`;
+  }else if(IS_IOS){
+    body=`<ol class="todo"><li>Pastikan halaman ini dibuka dalam <b>Safari</b>.</li>
+      <li>Tekan butang <b>Kongsi</b> ${SHARE_IOS} di bawah skrin (atau atas kanan di iPad).</li>
+      <li>Skrol ke bawah, tekan <b>Add to Home Screen</b> (Tambah ke Skrin Utama).</li><li>Tekan <b>Add</b> di atas kanan.</li></ol>`;
+  }else if(IS_SAMSUNG){
+    body=`<ol class="todo"><li>Tekan <b>≡</b> (tiga garis) di bawah kanan skrin.</li>
+      <li>Pilih <b>Add page to</b> (Tambah halaman ke).</li><li>Pilih <b>Home screen</b> (Skrin utama), kemudian <b>Add</b>.</li></ol>`;
+  }else{
+    body=`<ol class="todo"><li>Tekan <b>⋮</b> (tiga titik) di atas kanan Chrome.</li>
+      <li>Pilih <b>Install app</b> atau <b>Add to home screen</b> (Tambah ke skrin utama).</li><li>Tekan <b>Install</b> / <b>Pasang</b>.</li></ol>`;
+  }
+  return `<section class="card install">
+    <div style="display:flex;align-items:center;gap:12px"><img src="icons/admin-192.png" alt="" width="48" height="48" style="border-radius:12px;flex:none">
+      <div><h2 style="font-size:1.2rem">Pasang app di telefon</h2><span class="muted" style="font-size:.9rem">Ikon akan ada di skrin telefon, macam app biasa.</span></div></div>
+    ${body}
+    <button class="linkbtn" data-act="hide-install">Sembunyikan panduan ini</button>
+  </section>`;
 }
 function vMain(){
   if(!S.data){
@@ -382,7 +417,7 @@ function vMain(){
   const body=S.tab==='tempahan'?vTempahan():S.tab==='kalendar'?vKalendar():vBlok();
   return `${S.err?`<p class="err" role="alert">${esc(S.err)}</p>`:''}
     ${S.msg?`<p class="okmsg" role="status">${esc(S.msg)}</p>`:''}
-    ${vTiles()}${vTabs()}${body}${vInstall()}
+    ${vInstall()}${vTiles()}${vTabs()}${body}
     <p class="foot">${S.loading?'Sedang muat semula…':'Data dari Google Sheet "Tempahan Homestay Desa Barakah".'}</p>`;
 }
 
@@ -440,7 +475,9 @@ document.addEventListener('click',async e=>{
   if(a==='cal-prev')S.calMonth=new Date(S.calMonth.getFullYear(),S.calMonth.getMonth()-1,1);
   if(a==='cal-next')S.calMonth=new Date(S.calMonth.getFullYear(),S.calMonth.getMonth()+1,1);
   if(a==='day')S.selDay=S.selDay===v?null:v;
-  if(a==='install'&&window.__ip){window.__ip.prompt();window.__ip=null}
+  if(a==='install'&&window.__ip){const ip=window.__ip;ip.prompt();ip.userChoice.then(c=>{window.__ip=null;if(c&&c.outcome==='accepted')window.__installedNow=true;render()}).catch(()=>{});return}
+  if(a==='hide-install'){hideInstall=true;try{localStorage.setItem('dbadmin-hide-install','1')}catch(er){}}
+  if(a==='copy-admin'){const done=()=>{b.textContent='Link disalin ✓'};if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(ADMIN_URL).then(done,()=>{b.textContent=ADMIN_URL});else b.textContent=ADMIN_URL;return}
   if(a==='do-status'&&S.confirm){
     const {kod,status}=S.confirm;S.busy=true;render();
     try{
@@ -464,7 +501,8 @@ document.addEventListener('click',async e=>{
   }
   render();
 });
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window.__ip=e;if(S.view==='main'&&S.data)render()});
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window.__ip=e;render()});
+window.addEventListener('appinstalled',()=>{window.__installedNow=true;window.__ip=null;render()});
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('../sw.js').catch(()=>{})})}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.view==='main'&&S.data&&!S.busy)load(true)});
 
