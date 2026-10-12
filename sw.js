@@ -1,5 +1,5 @@
 // Homestay Desa Barakah - simpan app dalam telefon supaya cepat dibuka
-const CACHE = 'desa-barakah-v2';
+const CACHE = 'desa-barakah-v3';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

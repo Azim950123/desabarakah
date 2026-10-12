@@ -212,7 +212,7 @@ a{ color:inherit }
       <span>Kongsi</span></button>
   </header>
   <main id="app"></main>
-  <p class="foot">Tarikh berwarna kelabu dalam kalendar ini adalah contoh sahaja buat masa ini.</p>
+  <p class="foot">Maklumat anda hanya digunakan untuk urusan tempahan Homestay Desa Barakah.</p>
 </div>
 
 <script>
@@ -281,12 +281,27 @@ function vShareInstall(){
   </section>`;
 }
 
-// Contoh tarikh penuh (akan diganti dengan tempahan sebenar kemudian)
-const BOOKED=new Set();
-for(const[s,c] of [[3,2],[10,2],[17,3],[31,2]])for(let i=0;i<c;i++)BOOKED.add(addDays(TODAY,s+i));
+/* ---------- Buku tempahan (Google Sheet) ----------
+   Tampal link "Web app" dari Google Apps Script di bawah (berakhir dengan /exec). */
+const API_URL='';
+let BOOKED=new Set(), datesState=API_URL?'loading':'off';
 const conflict=(a,b)=>{for(let d=a;d<b;d=addDays(d,1))if(BOOKED.has(d))return true;return false};
+function loadDates(){
+  if(!API_URL)return;
+  fetch(API_URL+'?action=dates',{cache:'no-store'}).then(r=>r.json()).then(d=>{
+    BOOKED=new Set(Array.isArray(d.booked)?d.booked:[]);datesState='ready';
+    if(S.in&&(BOOKED.has(S.in)||(S.out&&conflict(S.in,S.out)))){S.in=null;S.out=null;S.calMsg='Tarikh pilihan anda baru sahaja penuh. Sila pilih tarikh lain.'}
+    if(S.view==='book')render();
+  }).catch(()=>{datesState='error';if(S.view==='book')render()});
+}
+function newCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<5;i++)s+=c[Math.floor(Math.random()*c.length)];return 'DB-'+s}
+function saveBooking(){
+  if(!API_URL)return;
+  const body=JSON.stringify({kod:S.code,nama:S.name.trim(),telefon:S.phone.trim(),masuk:S.in,keluar:S.out,tetamu:S.guests,nota:S.note.trim()});
+  try{fetch(API_URL,{method:'POST',mode:'no-cors',keepalive:true,headers:{'Content-Type':'text/plain;charset=utf-8'},body}).catch(()=>{})}catch(e){}
+}
 
-const S={view:'home',step:0,in:null,out:null,guests:2,name:'',phone:'',note:'',err:'',calMsg:''};
+const S={view:'home',step:0,in:null,out:null,guests:2,name:'',phone:'',note:'',err:'',calMsg:'',code:''};
 let calMonth=new Date(parse(TODAY).getFullYear(),parse(TODAY).getMonth(),1);
 const STEPS=['tarikh','maklumat','semak'];
 const TITLE={tarikh:['Bila anda mahu datang?','Tekan tarikh datang, kemudian tekan tarikh balik.'],
@@ -311,6 +326,7 @@ function bookingText(){
   const n=nights(S.in,S.out);
   return `Assalamualaikum Haji Berkuri, saya ingin menempah Homestay Desa Barakah.
 
+Kod tempahan: ${S.code}
 Nama: ${S.name.trim()}
 Telefon: ${S.phone.trim()}
 Tarikh datang: ${fmt(S.in)}
@@ -407,6 +423,8 @@ function vCalendar(){
       <div class="pick ${S.out?'on':''}"><small>Tarikh balik</small><b class="${S.out?'':'none'}">${S.out?fmtShort(S.out):'Belum pilih'}</b></div>
     </div>
     <p class="hint">${hint}</p>
+    ${datesState==='loading'?'<p class="note">Sedang semak tarikh yang sudah penuh…</p>':''}
+    ${datesState==='error'?`<p class="note">Tidak dapat semak tarikh penuh sekarang. ${OWNER} akan sahkan tarikh melalui WhatsApp.</p>`:''}
     <div class="cal-head">
       <button class="round" data-act="cal-prev" aria-label="Bulan sebelum" ${isFirstMonth?'disabled':''}>‹</button>
       <strong>${MONTHS[m]} ${y}</strong>
@@ -462,6 +480,7 @@ function vDone(){
   return `<section class="card done narrow">
     <div class="tick"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></div>
     <h2 class="steptitle" id="stepTitle" tabindex="-1">Terima kasih, ${esc(S.name.trim().split(' ')[0])}!</h2>
+    <div class="linkbox" style="width:100%"><span>Kod tempahan: ${S.code}</span></div>
     <p style="margin:0">Pastikan anda sudah tekan <b>Hantar</b> di WhatsApp. ${OWNER} akan balas untuk sahkan tarikh dan cara bayaran.</p>
     <p class="note" style="width:100%">WhatsApp tidak terbuka? Salin mesej di bawah dan hantar ke <b>${WA_SHOW}</b>.</p>
     <pre class="msg" id="msg">${esc(bookingText())}</pre>
@@ -499,16 +518,16 @@ function pickDay(ds){
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b||b.disabled)return;
   const [a,v]=b.dataset.act.split(':');let focus=false;
-  if(a==='start'){S.view='book';S.step=0;S.err='';focus=true}
+  if(a==='start'){S.view='book';S.step=0;S.err='';focus=true;if(datesState!=='ready')datesState=API_URL?'loading':'off';loadDates()}
   if(a==='cal-prev')calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()-1,1);
   if(a==='cal-next')calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+1,1);
   if(a==='day'){pickDay(v);S.err=''}
   if(a==='g-minus')S.guests=Math.max(1,S.guests-1);
   if(a==='g-plus')S.guests=Math.min(20,S.guests+1);
-  if(a==='next'){const m=check(STEPS[S.step]);S.err=m;if(!m){S.step++;S.calMsg='';focus=true}}
+  if(a==='next'){const m=check(STEPS[S.step]);S.err=m;if(!m){S.step++;S.calMsg='';focus=true;if(STEPS[S.step]==='semak'&&!S.code)S.code=newCode()}}
   if(a==='back'){S.err='';focus=true;if(S.step===0)S.view='home';else S.step--}
-  if(a==='send'){setTimeout(()=>{S.view='done';render(true)},300);return}
-  if(a==='reset'){Object.assign(S,{view:'home',step:0,in:null,out:null,guests:2,name:'',phone:'',note:'',err:'',calMsg:''});focus=true}
+  if(a==='send'){saveBooking();setTimeout(()=>{S.view='done';render(true)},300);return}
+  if(a==='reset'){Object.assign(S,{view:'home',step:0,in:null,out:null,guests:2,name:'',phone:'',note:'',err:'',calMsg:'',code:''});focus=true}
   if(a==='copy-num'){copyText(WA_SHOW.replace(/\D/g,''),b,'wa-num');return}
   if(a==='copy-msg'){copyText(bookingText(),b,'msg');return}
   if(a==='copy-link'){copyText(SITE,b,'site-link');return}
