@@ -157,6 +157,8 @@ details.help summary{ cursor:pointer; font-weight:800; color:var(--acc); min-hei
 @keyframes sp{ to{ transform:rotate(360deg) } }
 @media (prefers-reduced-motion:reduce){ .spin{ animation:none } }
 .install{ border:2px solid var(--acc) }
+.more summary{ cursor:pointer; font-weight:800; color:var(--acc); min-height:32px }
+.more[open]{ display:flex; flex-direction:column; gap:10px }
 .linkbtn{ align-self:flex-start; background:none; border:0; padding:4px 0; color:var(--muted); font-weight:700; text-decoration:underline; cursor:pointer; font-size:.9rem }
 .foot{ text-align:center; color:var(--muted); font-size:.85rem; margin:0 }
 </style>
@@ -376,6 +378,13 @@ const ADMIN_URL='https://azim950123.github.io/desabarakah/admin/';
 let INSTALLED=false;try{INSTALLED=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){}
 let hideInstall=false;try{hideInstall=localStorage.getItem('dbadmin-hide-install')==='1'}catch(e){}
 const SHARE_IOS='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px" aria-label="ikon Kongsi"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11v9h12v-9"/></svg>';
+function manualAndroid(){
+  return `<ol class="todo"><li>Pastikan halaman ini dibuka dalam <b>Google Chrome</b>.</li>
+    <li>Tekan <b>⋮</b> (tiga titik) di atas kanan Chrome.</li>
+    <li>Pilih <b>Add to home screen</b> (Tambah ke skrin utama) atau <b>Install app</b>.</li>
+    <li>Kalau ditanya, pilih <b>Install</b> (bukan "Create shortcut"), kemudian tekan <b>Install</b> / <b>Tambah</b>.</li></ol>
+    <p class="muted" style="margin:0;font-size:.9rem">Kalau pilihan itu tiada, buang dulu ikon lama "Desa Barakah" (jika pernah dipasang) dari skrin telefon, kemudian buka semula halaman ini.</p>`;
+}
 function vInstall(){
   if(INSTALLED||window.__installedNow)return window.__installedNow?'<p class="okmsg">App sudah dipasang. Cari ikon <b>DB Admin</b> (hijau gelap dengan kunci kuning) di skrin telefon.</p>':'';
   if(hideInstall)return '';
@@ -388,9 +397,12 @@ function vInstall(){
       <ol class="todo"><li>Tekan <b>${IS_IOS?'ikon kompas atau "Open in Safari"':'⋮'}</b> di ${IS_IOS?'bawah kanan':'atas kanan'} skrin.</li>
       <li>Pilih <b>${IS_IOS?'Open in Safari':'Buka dalam Chrome / Open in Chrome'}</b>.</li><li>Halaman ini akan dibuka semula, dan butang pasang akan muncul.</li></ol>
       <button class="btn ghost full" data-act="copy-admin">Salin link (tampal dalam ${IS_IOS?'Safari':'Chrome'})</button>`;
-  }else if(window.__ip){
+  }else if(window.__installing){
+    body=`<p class="okmsg">Sedang dipasang. Tunggu 10 hingga 30 saat, kemudian tutup Chrome dan cari ikon <b>DB Admin</b> di skrin telefon.</p>`;
+  }else if(window.__ip&&!window.__ipFailed){
     body=`<p style="margin:0">Tekan butang di bawah, kemudian tekan <b>Install</b> / <b>Pasang</b>.</p>
-      <button class="btn primary full" data-act="install">Pasang app sekarang</button>`;
+      <button class="btn primary full" data-act="install">Pasang app sekarang</button>
+      <details class="more"><summary>Butang tak berfungsi?</summary>${manualAndroid()}</details>`;
   }else if(IS_IOS){
     body=`<ol class="todo"><li>Pastikan halaman ini dibuka dalam <b>Safari</b>.</li>
       <li>Tekan butang <b>Kongsi</b> ${SHARE_IOS} di bawah skrin (atau atas kanan di iPad).</li>
@@ -399,8 +411,7 @@ function vInstall(){
     body=`<ol class="todo"><li>Tekan <b>≡</b> (tiga garis) di bawah kanan skrin.</li>
       <li>Pilih <b>Add page to</b> (Tambah halaman ke).</li><li>Pilih <b>Home screen</b> (Skrin utama), kemudian <b>Add</b>.</li></ol>`;
   }else{
-    body=`<ol class="todo"><li>Tekan <b>⋮</b> (tiga titik) di atas kanan Chrome.</li>
-      <li>Pilih <b>Install app</b> atau <b>Add to home screen</b> (Tambah ke skrin utama).</li><li>Tekan <b>Install</b> / <b>Pasang</b>.</li></ol>`;
+    body=`${window.__ipFailed?'<p class="warnmsg">Pemasangan belum berjaya. Cuba cara di bawah.</p>':''}${manualAndroid()}`;
   }
   return `<section class="card install">
     <div style="display:flex;align-items:center;gap:12px"><img src="icons/admin-192.png" alt="" width="48" height="48" style="border-radius:12px;flex:none">
@@ -475,7 +486,11 @@ document.addEventListener('click',async e=>{
   if(a==='cal-prev')S.calMonth=new Date(S.calMonth.getFullYear(),S.calMonth.getMonth()-1,1);
   if(a==='cal-next')S.calMonth=new Date(S.calMonth.getFullYear(),S.calMonth.getMonth()+1,1);
   if(a==='day')S.selDay=S.selDay===v?null:v;
-  if(a==='install'&&window.__ip){const ip=window.__ip;ip.prompt();ip.userChoice.then(c=>{window.__ip=null;if(c&&c.outcome==='accepted')window.__installedNow=true;render()}).catch(()=>{});return}
+  if(a==='install'&&window.__ip){
+    const ip=window.__ip;
+    try{const r=ip.prompt();if(r&&r.catch)r.catch(()=>{window.__ipFailed=true;render()})}catch(er){window.__ipFailed=true;render();return}
+    ip.userChoice.then(c=>{window.__ip=null;if(c&&c.outcome==='accepted')window.__installing=true;else window.__ipFailed=true;render()}).catch(()=>{window.__ipFailed=true;render()});
+    return}
   if(a==='hide-install'){hideInstall=true;try{localStorage.setItem('dbadmin-hide-install','1')}catch(er){}}
   if(a==='copy-admin'){const done=()=>{b.textContent='Link disalin ✓'};if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(ADMIN_URL).then(done,()=>{b.textContent=ADMIN_URL});else b.textContent=ADMIN_URL;return}
   if(a==='do-status'&&S.confirm){
