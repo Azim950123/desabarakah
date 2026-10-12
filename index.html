@@ -151,6 +151,7 @@ a{ color:inherit }
   .mbar{ display:none }
   .hero img{ aspect-ratio:21/9 }
 }
+.cta-bar.three{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)) }
 .cta-bar.two{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)) }
 
 /* wizard */
@@ -251,12 +252,8 @@ RM200 semalaman · 3 bilik semua berhawa dingin · Laman yang luas
 Lihat gambar dan tempah di sini:`;
 const WA_SHARE=`https://wa.me/?text=${encodeURIComponent(SHARE_TEXT+'\n'+SITE)}`;
 const FB_SHARE=`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(SITE)}`;
-const UA=navigator.userAgent||'';
-const IS_IOS=/iphone|ipad|ipod/i.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-let installPrompt=null, installed=false, guide=IS_IOS?'ios':'android';
-try{installed=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){}
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;if(S.view==='home')render()});
-window.addEventListener('appinstalled',()=>{installed=true;installPrompt=null;if(S.view==='home')render()});
+// Pemasangan app hanya untuk tuan rumah (melalui menu browser). Pelanggan tidak ditawarkan pasang app.
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault()});
 async function doShare(btn){
   if(navigator.share){try{await navigator.share({title:'Homestay Desa Barakah',text:SHARE_TEXT,url:SITE});return}catch(e){if(e&&e.name==='AbortError')return}}
   if(S.view!=='home'){S.view='home';render()}
@@ -264,30 +261,15 @@ async function doShare(btn){
   const el=document.getElementById('kongsi');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function vShareInstall(){
-  const steps=guide==='ios'
-    ?`<ol class="todo"><li>Buka link ini dalam <b>Safari</b>.</li><li>Tekan butang <b>Kongsi</b> (petak dengan anak panah ke atas) di bawah skrin.</li><li>Skrol ke bawah, tekan <b>Add to Home Screen</b> (Tambah ke Skrin Utama).</li><li>Tekan <b>Add</b>. Ikon Desa Barakah akan muncul di skrin telefon.</li></ol>`
-    :`<ol class="todo"><li>Buka link ini dalam <b>Google Chrome</b>.</li><li>Tekan butang <b>⋮</b> (tiga titik) di penjuru kanan atas.</li><li>Tekan <b>Install app</b> atau <b>Add to Home screen</b> (Tambah ke skrin utama).</li><li>Tekan <b>Install</b>. Ikon Desa Barakah akan muncul di skrin telefon.</li></ol>`;
-  const install=installed?'':`
-    <div class="sub">
-      <h3>Pasang app di telefon</h3>
-      <p class="muted-s" style="margin:0">Percuma. Tak perlu Play Store atau App Store. Ikon app akan ada di skrin telefon.</p>
-      ${installPrompt?'<button class="btn primary full" data-act="install">Pasang app sekarang</button>':''}
-      <div class="seg" role="group" aria-label="Jenis telefon">
-        <button class="seg-btn" data-act="guide:android" aria-pressed="${guide==='android'}">Android</button>
-        <button class="seg-btn" data-act="guide:ios" aria-pressed="${guide==='ios'}">iPhone</button>
-      </div>
-      ${steps}
-    </div>`;
   return `<section class="card" id="kongsi">
     <div class="sub">
       <h2 class="sec-title">Kongsi dengan keluarga & kawan</h2>
-      <div class="linkbox"><span id="site-link">${SITE.replace('https://','')}</span><button class="small-btn" data-act="copy-link">Salin link</button></div>
-      <div class="cta-bar two">
-        <a class="btn wa-solid" href="${WA_SHARE}" target="_blank" rel="noopener">${ICON.wa} Kongsi di WhatsApp</a>
-        <a class="btn ghost" href="${FB_SHARE}" target="_blank" rel="noopener">Kongsi di Facebook</a>
+      <div class="cta-bar three">
+        <a class="btn wa-solid" href="${WA_SHARE}" target="_blank" rel="noopener">${ICON.wa} WhatsApp</a>
+        <a class="btn ghost" href="${FB_SHARE}" target="_blank" rel="noopener">Facebook</a>
+        <button class="btn ghost" data-act="copy-link">Salin link</button>
       </div>
     </div>
-    ${install}
   </section>`;
 }
 
@@ -565,8 +547,6 @@ document.addEventListener('click',e=>{
   if(a==='copy-msg'){copyText(bookingText(),b,'msg');return}
   if(a==='copy-link'){copyText(SITE,b,'site-link');return}
   if(a==='share'){doShare(b);return}
-  if(a==='install'&&installPrompt){installPrompt.prompt();installPrompt.userChoice.finally(()=>{installPrompt=null;render()});return}
-  if(a==='guide')guide=v;
   render(focus);
 });
 app.addEventListener('input',e=>{
