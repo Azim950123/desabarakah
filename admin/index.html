@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1f4d33">
+<title>Desa Barakah Admin</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/admin-192.png">
+<link rel="apple-touch-icon" href="icons/admin-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="DB Admin">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: sticky header, summary tiles, tab switcher, one column of booking cards (large text for easy reading). */
+:root{
+  --bg:#f3f6f4; --surface:#ffffff; --fg:#17211c; --muted:#56635c; --line:#d8e0db; --soft-bg:#eaf0ec;
+  --acc:#1f6b43; --soft:#e3f0e8; --on-acc:#ffffff; --hdr:#1f4d33; --on-hdr:#ffffff;
+  --warn:#8a5a00; --warn-soft:#fff3d6; --ok:#1e6b3e; --ok-soft:#dcf1e3; --danger:#b3261e; --danger-soft:#fbeceb;
+  --grey:#6b7570; --grey-soft:#eceeed; --wa:#1a8a4a;
+  --fd:"Lora", Georgia, serif; --fb:"Nunito Sans", system-ui, -apple-system, "Segoe UI", sans-serif; --r:14px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f1512; --surface:#18201c; --fg:#e6ede8; --muted:#a2b0a8; --line:#2a352f; --soft-bg:#1e2823;
+  --acc:#6fc796; --soft:#1b3125; --on-acc:#0b130e; --hdr:#14301f; --on-hdr:#e6ede8;
+  --warn:#f0c661; --warn-soft:#352a10; --ok:#7fd3a2; --ok-soft:#173022; --danger:#f2b8b5; --danger-soft:#3a1f1e;
+  --grey:#a2aca7; --grey-soft:#262e2a; --wa:#5fd08f; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0f1512; --surface:#18201c; --fg:#e6ede8; --muted:#a2b0a8; --line:#2a352f; --soft-bg:#1e2823;
+  --acc:#6fc796; --soft:#1b3125; --on-acc:#0b130e; --hdr:#14301f; --on-hdr:#e6ede8;
+  --warn:#f0c661; --warn-soft:#352a10; --ok:#7fd3a2; --ok-soft:#173022; --danger:#f2b8b5; --danger-soft:#3a1f1e;
+  --grey:#a2aca7; --grey-soft:#262e2a; --wa:#5fd08f; color-scheme:dark }
+:root{ padding-top:0; padding-bottom:env(safe-area-inset-bottom,0px) }
+*{ box-sizing:border-box }
+html,body{ margin:0 }
+body{ background:var(--bg); color:var(--fg); font-family:var(--fb); font-size:18px; line-height:1.5 }
+h1,h2,h3{ font-family:var(--fd); font-weight:600; margin:0; line-height:1.2; text-wrap:balance }
+button,input,textarea{ font:inherit; color:inherit }
+:focus-visible{ outline:3px solid var(--acc); outline-offset:2px }
+a{ color:inherit }
+
+.hdr{ position:sticky; top:0; z-index:5; background:var(--hdr); color:var(--on-hdr); padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 12px }
+.hdr-in{ max-width:760px; margin:0 auto; display:flex; align-items:center; gap:12px }
+.hdr b{ font-family:var(--fd); font-size:1.2rem; font-weight:600; display:block; line-height:1.2; white-space:nowrap }
+.hdr small{ white-space:nowrap }
+#hdr-actions{ display:flex; gap:8px; flex:none }
+@media (max-width:440px){ .hbtn .lbl{ display:none } }
+.hdr small{ opacity:.8; font-size:.85rem }
+.hdr .sp{ flex:1 }
+.hbtn{ min-height:44px; min-width:44px; padding:0 12px; border-radius:12px; border:1.5px solid rgba(255,255,255,.35); background:transparent; color:var(--on-hdr); font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-size:.95rem }
+
+.wrap{ max-width:760px; margin:0 auto; padding-inline:16px; padding-block:18px 48px; display:flex; flex-direction:column; gap:18px }
+
+.card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:18px; display:flex; flex-direction:column; gap:14px; min-width:0 }
+.btn{ min-height:54px; padding:0 18px; border-radius:var(--r); border:1.5px solid transparent; font-weight:800; font-size:1.02rem; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; text-align:center }
+.btn.primary{ background:var(--acc); color:var(--on-acc) }
+.btn.ghost{ background:var(--surface); border-color:var(--line) }
+.btn.danger{ background:var(--surface); border-color:var(--danger); color:var(--danger) }
+.btn.danger-solid{ background:var(--danger); color:var(--surface) }
+.btn.wa{ background:var(--surface); border-color:var(--wa); color:var(--wa) }
+.btn:disabled{ opacity:.5; cursor:wait }
+.full{ width:100% }
+.row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px }
+.err{ background:var(--danger-soft); color:var(--danger); border-radius:10px; padding:12px 14px; font-weight:700; margin:0 }
+.okmsg{ background:var(--ok-soft); color:var(--ok); border-radius:10px; padding:12px 14px; font-weight:700; margin:0 }
+.warnmsg{ background:var(--warn-soft); color:var(--warn); border-radius:10px; padding:12px 14px; font-weight:700; margin:0 }
+.muted{ color:var(--muted) }
+
+/* login */
+.login{ max-width:420px; margin:24px auto 0; width:100% }
+.field{ display:flex; flex-direction:column; gap:6px; min-width:0 }
+.field label{ font-weight:800 }
+.field input,.field textarea{ min-width:0; max-width:100%; -webkit-appearance:none; appearance:none; min-height:56px; border:1.5px solid var(--line); border-radius:12px; padding:12px 14px; background:var(--bg); width:100%; font-size:1.1rem }
+.field input:focus{ border-color:var(--acc); outline:none; box-shadow:0 0 0 3px var(--soft) }
+#pin{ font-size:1.6rem; letter-spacing:.4em; text-align:center; font-variant-numeric:tabular-nums }
+.check{ display:flex; align-items:center; gap:10px; font-weight:600 }
+.check input{ width:22px; height:22px; accent-color:var(--acc) }
+
+/* summary */
+.tiles{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px }
+.tile{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px; display:flex; flex-direction:column; gap:2px; min-width:0; text-align:left; cursor:pointer }
+.tile b{ font-family:var(--fd); font-size:1.8rem; line-height:1.1; font-variant-numeric:tabular-nums }
+.tile span{ font-size:.85rem; color:var(--muted); font-weight:700; line-height:1.3 }
+.tile.warn b{ color:var(--warn) }
+.tile.money b{ color:var(--acc); font-size:1.45rem }
+@media (max-width:420px){ .tile b{ font-size:1.5rem } .tile.money b{ font-size:1.15rem } .tile{ padding:12px } }
+
+.tabs{ display:grid; grid-template-columns:repeat(3,1fr); gap:4px; background:var(--grey-soft); border-radius:14px; padding:4px; position:sticky; top:calc(env(safe-area-inset-top,0px) + 68px); z-index:4 }
+.tab{ min-height:48px; border:0; border-radius:11px; background:transparent; font-weight:800; cursor:pointer; color:var(--muted); font-size:.98rem }
+.tab[aria-selected="true"]{ background:var(--surface); color:var(--fg); box-shadow:0 1px 3px rgba(0,0,0,.14) }
+
+.chips{ display:flex; gap:8px; flex-wrap:wrap }
+.chip{ min-height:42px; padding:0 16px; border-radius:99px; border:1.5px solid var(--line); background:var(--surface); font-weight:800; cursor:pointer; font-size:.95rem }
+.chip[aria-pressed="true"]{ background:var(--acc); color:var(--on-acc); border-color:var(--acc) }
+
+/* booking card */
+.bk{ border-left:6px solid var(--grey) }
+.bk.s-Menunggu{ border-left-color:var(--warn) }
+.bk.s-Disahkan{ border-left-color:var(--ok) }
+.bk.s-Batal{ opacity:.75 }
+.bk-top{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap }
+.kod{ font-weight:800; letter-spacing:.04em; color:var(--muted); font-variant-numeric:tabular-nums }
+.pill{ font-size:.85rem; font-weight:800; padding:4px 12px; border-radius:99px; white-space:nowrap }
+.pill.Menunggu{ background:var(--warn-soft); color:var(--warn) }
+.pill.Disahkan{ background:var(--ok-soft); color:var(--ok) }
+.pill.Batal{ background:var(--grey-soft); color:var(--grey) }
+.bk h3{ font-size:1.35rem; overflow-wrap:anywhere }
+.tel{ margin:-8px 0 0; color:var(--muted); font-weight:700; font-variant-numeric:tabular-nums }
+.dates{ display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center; background:var(--soft-bg); border-radius:12px; padding:10px 12px }
+.dates div{ display:flex; flex-direction:column; min-width:0 }
+.dates small{ font-size:.75rem; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); font-weight:800 }
+.dates b{ font-size:1.02rem }
+.dates .arrow{ color:var(--muted); font-weight:800 }
+.facts{ display:flex; flex-wrap:wrap; gap:6px 18px; font-weight:700 }
+.facts span{ color:var(--muted); font-weight:600 }
+.note{ background:var(--soft-bg); border-radius:10px; padding:10px 12px; margin:0; font-size:.95rem; overflow-wrap:anywhere }
+.confirm{ background:var(--soft-bg); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:12px }
+.confirm p{ margin:0; font-weight:700 }
+.empty{ text-align:center; color:var(--muted); padding:28px 12px }
+.empty b{ display:block; color:var(--fg); font-size:1.1rem; margin-bottom:4px }
+
+/* calendar */
+.cal-head{ display:flex; align-items:center; justify-content:space-between; gap:8px }
+.cal-head strong{ font-size:1.15rem }
+.round{ width:48px; height:48px; border-radius:50%; border:1.5px solid var(--line); background:var(--surface); font-size:1.4rem; cursor:pointer; flex:none }
+.grid7{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px }
+.dow{ text-align:center; font-size:.75rem; font-weight:800; color:var(--muted); text-transform:uppercase }
+.day{ aspect-ratio:1; max-width:100%; border:0; border-radius:10px; background:var(--soft-bg); font-weight:800; cursor:pointer; position:relative; font-variant-numeric:tabular-nums; font-size:1rem }
+.day.past{ opacity:.45 }
+.day.today{ outline:2px solid var(--acc); outline-offset:-2px }
+.day.ok{ background:var(--ok); color:var(--on-acc) }
+.day.blk{ background:var(--grey); color:var(--surface) }
+.day.wait::after{ content:""; position:absolute; left:50%; bottom:5px; width:7px; height:7px; margin-left:-3.5px; border-radius:50%; background:var(--warn) }
+.day.sel{ box-shadow:0 0 0 3px var(--fg) }
+.legend{ display:flex; flex-wrap:wrap; gap:12px; font-size:.86rem; color:var(--muted); font-weight:700 }
+.legend i{ display:inline-block; width:14px; height:14px; border-radius:4px; vertical-align:-2px; margin-right:6px }
+.daylist{ display:flex; flex-direction:column; gap:8px }
+.dl-item{ display:flex; justify-content:space-between; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--surface) }
+.dl-item div{ min-width:0 }
+.dl-item b{ display:block; overflow-wrap:anywhere }
+
+/* blocks */
+.two{ display:grid; grid-template-columns:1fr 1fr; gap:10px }
+@media (max-width:380px){ .two{ grid-template-columns:1fr } }
+.blk-item{ display:flex; justify-content:space-between; align-items:center; gap:12px; border:1px solid var(--line); border-radius:12px; padding:12px 14px }
+.blk-item div{ min-width:0 }
+.blk-item b{ display:block }
+
+details.help{ border-top:1px solid var(--line); padding-top:14px }
+details.help summary{ cursor:pointer; font-weight:800; color:var(--acc); min-height:32px }
+.todo{ margin:10px 0 0; padding-left:22px; display:flex; flex-direction:column; gap:6px }
+.loading{ display:flex; align-items:center; gap:10px; color:var(--muted); font-weight:700 }
+.spin{ width:20px; height:20px; border:3px solid var(--line); border-top-color:var(--acc); border-radius:50%; animation:sp 1s linear infinite }
+@keyframes sp{ to{ transform:rotate(360deg) } }
+@media (prefers-reduced-motion:reduce){ .spin{ animation:none } }
+.foot{ text-align:center; color:var(--muted); font-size:.85rem; margin:0 }
+</style>
+</head>
+<body>
+<header class="hdr"><div class="hdr-in">
+  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 4l9 7"/><path d="M5 10v9h14v-9"/><path d="M10 19v-5h4v5"/></svg>
+  <div><b>Desa Barakah</b><small>App Haji Berkuri</small></div>
+  <span class="sp"></span>
+  <span id="hdr-actions"></span>
+</div></header>
+<main class="wrap" id="app"></main>
+
+<script>
+const API='https://script.google.com/macros/s/AKfycbw9U77F1-YFS7LyyFuCbL7EdEQCtw37G4qsWMgMhHJyI668z6DdYFkeOWzeTohl9jXsIg/exec';
+const DAYS=['Ahad','Isnin','Selasa','Rabu','Khamis','Jumaat','Sabtu'];
+const DSH=['Ahd','Isn','Sel','Rab','Kha','Jum','Sab'];
+const MONTHS=['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return iso(d)};
+const fmtS=s=>{if(!s)return '-';const d=parse(s);return `${DSH[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)}`};
+const fmtL=s=>{const d=parse(s);return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`};
+const rm=n=>'RM'+Number(n||0).toLocaleString('ms-MY');
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const overlap=(a1,a2,b1,b2)=>a1<b2&&b1<a2;
+const WA_ICON='<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.6.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.3c0-.1-.2-.2-.4-.3z"/></svg>';
+const ERR={PIN_SALAH:'PIN salah. Sila cuba lagi.',TERKUNCI:'Terlalu banyak cubaan salah. Sila cuba lagi selepas 15 minit.',
+  TIADA_PIN:'PIN belum ditetapkan. Buka Google Sheet, tekan menu "Homestay Desa Barakah", kemudian "Tetapkan PIN app Haji Berkuri".'};
+
+const S={pin:'',remember:true,view:'login',tab:'tempahan',filter:'menunggu',data:null,loading:false,err:'',msg:'',warn:'',
+  confirm:null,busy:false,justConfirmed:null,calMonth:null,selDay:null,blkErr:'',blkMsg:''};
+try{const p=localStorage.getItem('dbadmin-pin');if(p){S.pin=p;S.view='main'}}catch(e){}
+
+/* ---------- API ---------- */
+async function api(body){
+  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...body,pin:S.pin})});
+  return r.json();
+}
+async function load(first){
+  S.loading=true;if(!first)render();
+  try{
+    const d=await api({action:'list'});
+    if(!d.ok){
+      if(ERR[d.error]){S.view='login';S.err=ERR[d.error];try{localStorage.removeItem('dbadmin-pin')}catch(e){}}
+      else S.err=d.error||'Ralat tidak diketahui.';
+    }else{S.data=d;S.err='';if(!S.calMonth){const t=parse(d.today);S.calMonth=new Date(t.getFullYear(),t.getMonth(),1)}}
+  }catch(e){S.err='Tidak dapat sambung ke internet. Semak sambungan dan tekan "Muat semula".'}
+  S.loading=false;render();
+}
+
+/* ---------- Data helpers ---------- */
+const today=()=>S.data?S.data.today:iso(new Date());
+const bookings=()=>S.data?S.data.bookings:[];
+const blocks=()=>S.data?S.data.blocks:[];
+function clashes(b){
+  const out=[];
+  bookings().forEach(x=>{if(x.kod!==b.kod&&x.status==='Disahkan'&&overlap(b.masuk,b.keluar,x.masuk,x.keluar))out.push(`tempahan ${x.kod} (${x.nama})`)});
+  blocks().forEach(x=>{if(overlap(b.masuk,b.keluar,x.mula,addDays(x.akhir,1)))out.push(`tarikh blok${x.sebab?' ('+x.sebab+')':''}`)});
+  return out;
+}
+function phoneIntl(p){let d=String(p).replace(/\D/g,'');if(d.startsWith('0'))d='6'+d;else if(!d.startsWith('6'))d='60'+d;return d}
+function waTo(b,text){return `https://wa.me/${phoneIntl(b.telefon)}?text=${encodeURIComponent(text)}`}
+function msgConfirmed(b){return `Assalamualaikum ${b.nama}. Tempahan anda di Homestay Desa Barakah telah DISAHKAN.
+
+Kod: ${b.kod}
+Datang: ${fmtL(b.masuk)} (daftar masuk 2:00 ptg)
+Balik: ${fmtL(b.keluar)} (daftar keluar 12:00 tgh)
+Jumlah: ${rm(b.jumlah)}
+
+Sila buat bayaran melalui QR DuitNow dalam app tempahan, dan hantar resit ke sini. Terima kasih.`}
+function msgCancelled(b){return `Assalamualaikum ${b.nama}. Harap maaf, tempahan ${b.kod} di Homestay Desa Barakah (${fmtL(b.masuk)} hingga ${fmtL(b.keluar)}) tidak dapat diteruskan. Terima kasih.`}
+
+/* ---------- Views ---------- */
+function vLogin(){
+  return `<section class="card login">
+    <h1 style="font-size:1.6rem">Selamat datang, Haji</h1>
+    <p class="muted" style="margin:-6px 0 0">Masukkan PIN untuk urus tempahan Homestay Desa Barakah.</p>
+    <form id="loginForm" style="display:flex;flex-direction:column;gap:14px">
+      <div class="field"><label for="pin">PIN</label>
+        <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="12" placeholder="••••••" required></div>
+      <label class="check"><input type="checkbox" id="remember" ${S.remember?'checked':''}> Ingat saya di telefon ini</label>
+      ${S.err?`<p class="err" role="alert">${esc(S.err)}</p>`:''}
+      <button class="btn primary full" type="submit" ${S.busy?'disabled':''}>${S.busy?'Sedang masuk…':'Masuk'}</button>
+    </form>
+  </section>`;
+}
+function vTiles(){
+  const t=today(),m=t.slice(0,7),bs=bookings();
+  const wait=bs.filter(b=>b.status==='Menunggu'&&b.keluar>t).length;
+  const upcoming=bs.filter(b=>b.status==='Disahkan'&&b.keluar>t).length;
+  const income=bs.filter(b=>b.status==='Disahkan'&&b.masuk.slice(0,7)===m).reduce((a,b)=>a+b.jumlah,0);
+  return `<div class="tiles">
+    <button class="tile warn" data-act="goto:menunggu"><b>${wait}</b><span>Menunggu pengesahan</span></button>
+    <button class="tile" data-act="goto:akan"><b>${upcoming}</b><span>Tempahan akan datang</span></button>
+    <div class="tile money"><b>${rm(income)}</b><span>Disahkan bulan ${MONTHS[parse(t).getMonth()]}</span></div>
+  </div>`;
+}
+function vTabs(){
+  const T=[['tempahan','Tempahan'],['kalendar','Kalendar'],['blok','Blok Tarikh']];
+  return `<div class="tabs" role="tablist">${T.map(([k,l])=>`<button class="tab" role="tab" data-act="tab:${k}" aria-selected="${S.tab===k}">${l}</button>`).join('')}</div>`;
+}
+function vBooking(b){
+  const t=today(),cl=b.status!=='Batal'?clashes(b):[];
+  const c=S.confirm&&S.confirm.kod===b.kod?S.confirm:null;
+  let actions='';
+  if(c){
+    const txt=c.status==='Disahkan'?'Sahkan tempahan ini? Tarikh akan ditutup untuk pelanggan lain.':c.status==='Batal'?'Batalkan tempahan ini? Tarikh akan dibuka semula.':'Kembalikan tempahan ini kepada "Menunggu"?';
+    actions=`<div class="confirm"><p>${txt}</p><div class="row">
+      <button class="btn ${c.status==='Batal'?'danger-solid':'primary'}" data-act="do-status" ${S.busy?'disabled':''}>${S.busy?'Sedang simpan…':'Ya, teruskan'}</button>
+      <button class="btn ghost" data-act="cancel-confirm">Tidak</button></div></div>`;
+  }else if(b.status==='Menunggu'){
+    actions=`<div class="row"><button class="btn primary" data-act="ask:${b.kod}:Disahkan">Sahkan</button><button class="btn danger" data-act="ask:${b.kod}:Batal">Batal</button></div>`;
+  }else if(b.status==='Disahkan'){
+    actions=`<div class="row"><button class="btn danger" data-act="ask:${b.kod}:Batal">Batalkan tempahan</button></div>`;
+  }else{
+    actions=`<div class="row"><button class="btn ghost" data-act="ask:${b.kod}:Menunggu">Kembalikan ke Menunggu</button></div>`;
+  }
+  const after=S.justConfirmed===b.kod?`<p class="okmsg">Tempahan ${b.status==='Disahkan'?'disahkan':'dibatalkan'}. Beritahu pelanggan sekarang:</p>
+    <a class="btn wa full" href="${waTo(b,b.status==='Disahkan'?msgConfirmed(b):msgCancelled(b))}" target="_blank" rel="noopener">${WA_ICON} Hantar ${b.status==='Disahkan'?'pengesahan':'makluman batal'} di WhatsApp</a>`:'';
+  return `<article class="card bk s-${esc(b.status)}">
+    <div class="bk-top"><span class="kod">${esc(b.kod)}</span><span class="pill ${esc(b.status)}">${esc(b.status||'-')}</span></div>
+    <h3>${esc(b.nama)}</h3>
+    <p class="tel">${esc(b.telefon)}</p>
+    <div class="dates"><div><small>Datang</small><b>${fmtS(b.masuk)}</b></div><span class="arrow">→</span><div><small>Balik</small><b>${fmtS(b.keluar)}</b></div></div>
+    <div class="facts"><div>${b.malam} <span>malam</span></div><div>${b.tetamu} <span>orang</span></div><div>${rm(b.jumlah)}</div></div>
+    ${b.nota?`<p class="note"><b>Permintaan:</b> ${esc(b.nota)}</p>`:''}
+    ${cl.length&&b.status==='Menunggu'?`<p class="warnmsg">Bertindih dengan ${esc(cl.join(', '))}. Tidak boleh disahkan.</p>`:''}
+    ${b.keluar<=t?'<p class="muted" style="margin:0;font-size:.9rem">Tarikh tempahan ini sudah lepas.</p>':''}
+    <div class="row">
+      <a class="btn wa" href="${waTo(b,`Assalamualaikum ${b.nama}, ini Haji Berkuri dari Homestay Desa Barakah berkenaan tempahan ${b.kod}.`)}" target="_blank" rel="noopener">${WA_ICON} WhatsApp</a>
+      <a class="btn ghost" href="tel:${esc(String(b.telefon).replace(/[^\d+]/g,''))}">Telefon</a>
+    </div>
+    ${after}
+    ${actions}
+  </article>`;
+}
+function vTempahan(){
+  const t=today(),bs=bookings();
+  const F={menunggu:['Menunggu',b=>b.status==='Menunggu'&&b.keluar>t,(a,b)=>a.masuk<b.masuk?-1:1],
+    akan:['Akan datang',b=>b.status==='Disahkan'&&b.keluar>t,(a,b)=>a.masuk<b.masuk?-1:1],
+    semua:['Semua',()=>true,(a,b)=>a.masuk>b.masuk?-1:1]};
+  const [,fn,sort]=F[S.filter];
+  const list=bs.filter(fn).sort(sort);
+  const chips=Object.entries(F).map(([k,[l]])=>`<button class="chip" data-act="filter:${k}" aria-pressed="${S.filter===k}">${l}</button>`).join('');
+  const empty={menunggu:['Tiada tempahan menunggu','Tempahan baru dari pelanggan akan muncul di sini.'],
+    akan:['Tiada tempahan akan datang','Tempahan yang anda sahkan akan muncul di sini.'],
+    semua:['Belum ada tempahan','Bila pelanggan menempah melalui laman web, ia akan muncul di sini.']}[S.filter];
+  return `<div class="chips">${chips}</div>
+    ${list.length?list.map(vBooking).join(''):`<div class="card empty"><b>${empty[0]}</b>${empty[1]}</div>`}`;
+}
+function vKalendar(){
+  const y=S.calMonth.getFullYear(),m=S.calMonth.getMonth(),t=today();
+  const first=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate();
+  let cells=DSH.map(d=>`<div class="dow">${d}</div>`).join('');
+  for(let i=0;i<first;i++)cells+='<div></div>';
+  const bs=bookings().filter(b=>b.status!=='Batal');
+  for(let d=1;d<=dim;d++){
+    const ds=`${y}-${pad(m+1)}-${pad(d)}`;
+    const ok=bs.some(b=>b.status==='Disahkan'&&b.masuk<=ds&&ds<b.keluar);
+    const blk=blocks().some(x=>x.mula<=ds&&ds<=x.akhir);
+    const wait=bs.some(b=>b.status==='Menunggu'&&b.masuk<=ds&&ds<b.keluar);
+    const cls=['day'];if(ds<t)cls.push('past');if(ds===t)cls.push('today');if(ok)cls.push('ok');else if(blk)cls.push('blk');if(wait)cls.push('wait');if(S.selDay===ds)cls.push('sel');
+    cells+=`<button class="${cls.join(' ')}" data-act="day:${ds}" aria-label="${fmtL(ds)}${ok?', ada tempahan':''}${blk?', diblok':''}${wait?', ada tempahan menunggu':''}">${d}</button>`;
+  }
+  let detail='<p class="muted" style="margin:0">Tekan mana-mana tarikh untuk lihat siapa yang menginap.</p>';
+  if(S.selDay){
+    const ds=S.selDay;
+    const items=bs.filter(b=>b.masuk<=ds&&ds<b.keluar).map(b=>`<div class="dl-item"><div><b>${esc(b.nama)}</b><span class="muted">${esc(b.kod)} · ${fmtS(b.masuk)} → ${fmtS(b.keluar)}</span></div><span class="pill ${esc(b.status)}">${esc(b.status)}</span></div>`);
+    blocks().filter(x=>x.mula<=ds&&ds<=x.akhir).forEach(x=>items.push(`<div class="dl-item"><div><b>Diblok</b><span class="muted">${esc(x.sebab||'Tiada sebab dicatat')}</span></div><span class="pill Batal">Blok</span></div>`));
+    detail=`<h3 style="font-size:1.1rem">${fmtL(ds)}</h3><div class="daylist">${items.length?items.join(''):'<p class="muted" style="margin:0">Kosong. Tiada tempahan pada malam ini.</p>'}</div>`;
+  }
+  return `<section class="card">
+    <div class="cal-head"><button class="round" data-act="cal-prev" aria-label="Bulan sebelum">‹</button><strong>${MONTHS[m]} ${y}</strong><button class="round" data-act="cal-next" aria-label="Bulan seterusnya">›</button></div>
+    <div class="grid7">${cells}</div>
+    <div class="legend"><span><i style="background:var(--ok)"></i>Disahkan</span><span><i style="background:var(--grey)"></i>Diblok</span><span><i style="background:var(--warn);border-radius:50%"></i>Menunggu</span></div>
+    ${detail}
+  </section>`;
+}
+function vBlok(){
+  const t=today();
+  const list=blocks().filter(x=>x.akhir>=t).sort((a,b)=>a.mula<b.mula?-1:1);
+  const c=S.confirm&&S.confirm.block!=null?S.confirm:null;
+  return `<section class="card">
+    <h2 style="font-size:1.3rem">Blok tarikh</h2>
+    <p class="muted" style="margin:-6px 0 0">Untuk tempahan melalui telefon, kenduri keluarga atau kerja baik pulih. Tarikh ini akan jadi penuh di laman tempahan.</p>
+    <form id="blockForm" style="display:flex;flex-direction:column;gap:14px">
+      <div class="two">
+        <div class="field"><label for="b-mula">Tarikh mula</label><input id="b-mula" type="date" min="${t}" required></div>
+        <div class="field"><label for="b-akhir">Tarikh akhir</label><input id="b-akhir" type="date" min="${t}" required></div>
+      </div>
+      <div class="field"><label for="b-sebab">Sebab <span class="muted" style="font-weight:400">(tidak wajib)</span></label><input id="b-sebab" maxlength="120" placeholder="Contoh: Tempahan telefon, Encik Ahmad"></div>
+      ${S.blkErr?`<p class="err" role="alert">${esc(S.blkErr)}</p>`:''}
+      ${S.blkMsg?`<p class="okmsg" role="status">${esc(S.blkMsg)}</p>`:''}
+      ${S.warn?`<p class="warnmsg">${esc(S.warn)}</p>`:''}
+      <button class="btn primary full" type="submit" ${S.busy?'disabled':''}>${S.busy?'Sedang simpan…':'Blok tarikh ini'}</button>
+    </form>
+  </section>
+  <section class="card">
+    <h2 style="font-size:1.3rem">Tarikh yang sedang diblok</h2>
+    ${list.length?list.map(x=>{
+      const on=c&&c.block===x.row;
+      return `<div class="blk-item"><div><b>${fmtS(x.mula)}${x.akhir!==x.mula?' → '+fmtS(x.akhir):''}</b><span class="muted">${esc(x.sebab||'Tiada sebab dicatat')}</span></div>
+        ${on?`<div class="row" style="flex:none;grid-template-columns:auto auto"><button class="btn danger-solid" data-act="do-unblock" ${S.busy?'disabled':''}>Ya, buka</button><button class="btn ghost" data-act="cancel-confirm">Tidak</button></div>`
+            :`<button class="btn ghost" data-act="ask-unblock:${x.row}" style="flex:none">Buka semula</button>`}</div>`}).join('')
+      :'<p class="muted" style="margin:0">Tiada tarikh diblok.</p>'}
+  </section>`;
+}
+function vInstall(){
+  return `<details class="help card">
+    <summary>Pasang app ini di skrin telefon</summary>
+    ${window.__ip?'<button class="btn primary full" data-act="install" style="margin-top:12px">Pasang app sekarang</button>':''}
+    <p style="margin:12px 0 0;font-weight:800">Telefon Android (Chrome)</p>
+    <ol class="todo"><li>Tekan <b>⋮</b> (tiga titik) di atas kanan.</li><li>Pilih <b>Install app</b> atau <b>Add to Home screen</b>.</li><li>Tekan <b>Install</b>.</li></ol>
+    <p style="margin:12px 0 0;font-weight:800">iPhone (Safari)</p>
+    <ol class="todo"><li>Tekan butang <b>Kongsi</b> (petak dengan anak panah ke atas).</li><li>Pilih <b>Add to Home Screen</b>.</li><li>Tekan <b>Add</b>.</li></ol>
+  </details>`;
+}
+function vMain(){
+  if(!S.data){
+    return S.err?`<p class="err" role="alert">${esc(S.err)}</p><button class="btn primary" data-act="reload">Cuba lagi</button>`
+      :'<div class="card"><div class="loading"><span class="spin"></span>Sedang ambil senarai tempahan…</div></div>';
+  }
+  const body=S.tab==='tempahan'?vTempahan():S.tab==='kalendar'?vKalendar():vBlok();
+  return `${S.err?`<p class="err" role="alert">${esc(S.err)}</p>`:''}
+    ${S.msg?`<p class="okmsg" role="status">${esc(S.msg)}</p>`:''}
+    ${vTiles()}${vTabs()}${body}${vInstall()}
+    <p class="foot">${S.loading?'Sedang muat semula…':'Data dari Google Sheet "Tempahan Homestay Desa Barakah".'}</p>`;
+}
+
+/* ---------- Render ---------- */
+const app=document.getElementById('app'),hdrA=document.getElementById('hdr-actions');
+function render(){
+  hdrA.innerHTML=S.view==='main'?`<button class="hbtn" data-act="reload" aria-label="Muat semula">${S.loading?'<span class="spin" style="width:16px;height:16px;border-width:2px"></span>':'↻'}<span class="lbl"> Muat semula</span></button><button class="hbtn" data-act="logout">Keluar</button>`:'';
+  const keep={};['b-mula','b-akhir','b-sebab'].forEach(id=>{const el=document.getElementById(id);if(el)keep[id]=el.value});
+  app.innerHTML=S.view==='login'?vLogin():vMain();
+  Object.entries(keep).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.value=v});
+  if(S.view==='login'){const p=document.getElementById('pin');if(p&&!S.busy)p.focus()}
+}
+
+/* ---------- Events ---------- */
+document.addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(e.target.id==='loginForm'){
+    const pin=document.getElementById('pin').value.trim();S.remember=document.getElementById('remember').checked;
+    if(!/^\d{6,12}$/.test(pin)){S.err='PIN mesti 6 hingga 12 nombor.';render();return}
+    S.pin=pin;S.busy=true;S.err='';render();
+    try{
+      const d=await api({action:'list'});
+      if(!d.ok){S.err=ERR[d.error]||d.error||'Tidak dapat masuk.';S.pin=''}
+      else{S.data=d;S.view='main';const t=parse(d.today);S.calMonth=new Date(t.getFullYear(),t.getMonth(),1);
+        if(S.remember){try{localStorage.setItem('dbadmin-pin',pin)}catch(er){}}}
+    }catch(er){S.err='Tidak dapat sambung ke internet. Semak sambungan dan cuba lagi.';S.pin=''}
+    S.busy=false;render();
+  }
+  if(e.target.id==='blockForm'){
+    const mula=document.getElementById('b-mula').value,akhir=document.getElementById('b-akhir').value||mula,sebab=document.getElementById('b-sebab').value.trim();
+    S.blkErr='';S.blkMsg='';S.warn='';
+    if(!mula){S.blkErr='Sila pilih tarikh mula.';render();return}
+    if(akhir<mula){S.blkErr='Tarikh akhir mesti sama atau selepas tarikh mula.';render();return}
+    S.busy=true;render();
+    try{
+      const d=await api({action:'block',mula,akhir,sebab});
+      if(!d.ok)S.blkErr=d.error||'Tidak dapat simpan.';
+      else{S.blkMsg=`Tarikh ${fmtS(mula)}${akhir!==mula?' hingga '+fmtS(akhir):''} sudah diblok.`;S.warn=d.warning||'';
+        ['b-mula','b-akhir','b-sebab'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});await load(true)}
+    }catch(er){S.blkErr='Tidak dapat sambung ke internet. Cuba lagi.'}
+    S.busy=false;render();
+  }
+});
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act]');if(!b||b.disabled)return;
+  const [a,v,w]=b.dataset.act.split(':');
+  if(a==='reload'){S.msg='';S.err='';load();return}
+  if(a==='logout'){try{localStorage.removeItem('dbadmin-pin')}catch(er){}Object.assign(S,{pin:'',view:'login',data:null,err:'',msg:''});render();return}
+  if(a==='tab'){S.tab=v;S.confirm=null;S.msg='';S.blkMsg='';S.blkErr='';S.warn=''}
+  if(a==='goto'){S.tab='tempahan';S.filter=v;S.confirm=null}
+  if(a==='filter'){S.filter=v;S.confirm=null;S.justConfirmed=null}
+  if(a==='ask'){S.confirm={kod:v,status:w};S.justConfirmed=null;S.err=''}
+  if(a==='ask-unblock'){S.confirm={block:Number(v)}}
+  if(a==='cancel-confirm'){S.confirm=null}
+  if(a==='cal-prev')S.calMonth=new Date(S.calMonth.getFullYear(),S.calMonth.getMonth()-1,1);
+  if(a==='cal-next')S.calMonth=new Date(S.calMonth.getFullYear(),S.calMonth.getMonth()+1,1);
+  if(a==='day')S.selDay=S.selDay===v?null:v;
+  if(a==='install'&&window.__ip){window.__ip.prompt();window.__ip=null}
+  if(a==='do-status'&&S.confirm){
+    const {kod,status}=S.confirm;S.busy=true;render();
+    try{
+      const d=await api({action:'status',kod,status});
+      if(!d.ok){S.err=d.error||'Tidak dapat simpan.';S.confirm=null}
+      else{S.confirm=null;S.err='';S.justConfirmed=(status==='Disahkan'||status==='Batal')?kod:null;
+        const bk=bookings().find(x=>x.kod===kod);if(bk)bk.status=status;
+        S.msg=status==='Disahkan'?`${kod} disahkan.`:status==='Batal'?`${kod} dibatalkan. Tarikh dibuka semula.`:`${kod} dikembalikan ke Menunggu.`;
+        load(true)}
+    }catch(er){S.err='Tidak dapat sambung ke internet. Cuba lagi.'}
+    S.busy=false;render();
+    const card=[...document.querySelectorAll('.bk')].find(el=>el.textContent.includes(kod));if(card)card.scrollIntoView({block:'nearest'});
+    return;
+  }
+  if(a==='do-unblock'&&S.confirm){
+    const row=S.confirm.block,x=blocks().find(y=>y.row===row);S.busy=true;render();
+    try{const d=await api({action:'unblock',row,mula:x?x.mula:''});
+      if(!d.ok)S.blkErr=d.error||'Tidak dapat buka.';else{S.blkMsg='Tarikh dibuka semula.';await load(true)}}
+    catch(er){S.blkErr='Tidak dapat sambung ke internet. Cuba lagi.'}
+    S.confirm=null;S.busy=false;render();return;
+  }
+  render();
+});
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window.__ip=e;if(S.view==='main'&&S.data)render()});
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('../sw.js').catch(()=>{})})}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.view==='main'&&S.data&&!S.busy)load(true)});
+
+render();
+if(S.view==='main')load(true);
+</script>
+</body>
+</html>

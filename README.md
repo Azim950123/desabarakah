@@ -2,8 +2,6 @@
 
 App tempahan homestay secara ringkas.
 
-- RM200 semalaman, 3 bilik semua berhawa dingin, laman yang luas
-- Tempahan dihantar terus ke WhatsApp tuan rumah
-- Boleh dipasang di telefon Android dan iPhone (PWA), tanpa Play Store atau App Store
-
-Laman web: https://azim950123.github.io/desabarakah/
+- Halaman pelanggan: tempah, bayar melalui QR DuitNow, hantar ke WhatsApp tuan rumah
+- `admin/`: app pengurusan untuk tuan rumah (dilindungi PIN) — sahkan/batal tempahan, kalendar, blok tarikh
+- `apps-script/Code.gs`: kod Google Apps Script yang menyambungkan app dengan Google Sheet

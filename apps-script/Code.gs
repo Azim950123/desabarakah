@@ -110,15 +110,13 @@ function doPost(e) {
   try {
     lock.waitLock(10000);
     const d = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-    const clean = (v, n) => String(v == null ? '' : v).replace(/[\r\n\t]+/g, ' ').trim().slice(0, n);
-    const safe = v => /^[=+\-@]/.test(v) ? "'" + v : v; // elak formula pelik dalam Sheet
+    if (d.action) return adminAction(d); // permintaan dari app Haji Berkuri
     const kod = clean(d.kod, 12), nama = safe(clean(d.nama, 80)), tel = safe(clean(d.telefon, 20));
     const nota = safe(clean(d.nota, 300));
     const isoOk = s => /^\d{4}-\d{2}-\d{2}$/.test(s);
     if (!/^DB-[A-Z0-9]{4,8}$/.test(kod) || !nama || !tel || !isoOk(d.masuk) || !isoOk(d.keluar) || d.keluar <= d.masuk) {
       return json({ ok: false, error: 'Maklumat tidak lengkap' });
     }
-    const toDate = s => { const p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); };
     const masuk = toDate(d.masuk), keluar = toDate(d.keluar);
     const malam = Math.round((keluar - masuk) / 864e5);
     if (malam < 1 || malam > 60) return json({ ok: false, error: 'Tarikh tidak sah' });
@@ -136,6 +134,110 @@ function doPost(e) {
   } finally {
     try { lock.releaseLock(); } catch (e2) {}
   }
+}
+
+/* ============================================================
+ * APP PENGURUSAN HAJI BERKURI (dilindungi PIN)
+ * ============================================================ */
+const TZ = 'Asia/Kuala_Lumpur';
+const clean = (v, n) => String(v == null ? '' : v).replace(/[\r\n\t]+/g, ' ').trim().slice(0, n);
+const safe = v => /^[=+\-@]/.test(v) ? "'" + v : v; // elak formula pelik dalam Sheet
+const isoOk = s => /^\d{4}-\d{2}-\d{2}$/.test(String(s));
+const toDate = s => Utilities.parseDate(s, TZ, 'yyyy-MM-dd');
+const toIso = v => v instanceof Date ? Utilities.formatDate(v, TZ, 'yyyy-MM-dd') : '';
+const nextDay = s => { const d = toDate(s); d.setDate(d.getDate() + 1); return toIso(d); };
+const overlap = (a1, a2, b1, b2) => a1 < b2 && b1 < a2; // julat [mula, tamat)
+
+/** Menu dalam Google Sheet. */
+function onOpen() {
+  SpreadsheetApp.getUi().createMenu('Homestay Desa Barakah')
+    .addItem('Tetapkan PIN app Haji Berkuri', 'tetapkanPin')
+    .addToUi();
+}
+
+/** Tetapkan / tukar PIN untuk app pengurusan. */
+function tetapkanPin() {
+  const ui = SpreadsheetApp.getUi();
+  const r = ui.prompt('PIN app Haji Berkuri',
+    'Masukkan PIN baru (6 hingga 12 nombor). PIN ini digunakan untuk masuk ke app pengurusan.',
+    ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  const pin = r.getResponseText().trim();
+  if (!/^\d{6,12}$/.test(pin)) { ui.alert('PIN mesti 6 hingga 12 nombor sahaja. Sila cuba lagi.'); return; }
+  PropertiesService.getScriptProperties().setProperty('ADMIN_PIN', pin);
+  CacheService.getScriptCache().remove('pinfail');
+  ui.alert('PIN berjaya disimpan. Gunakan PIN ini untuk masuk ke app Haji Berkuri.');
+}
+
+function checkPin(pin) {
+  const cache = CacheService.getScriptCache();
+  const fails = Number(cache.get('pinfail') || 0);
+  if (fails >= 5) return 'TERKUNCI';
+  const stored = PropertiesService.getScriptProperties().getProperty('ADMIN_PIN');
+  if (!stored) return 'TIADA_PIN';
+  if (String(pin || '') !== stored) { cache.put('pinfail', String(fails + 1), 900); return 'PIN_SALAH'; }
+  cache.remove('pinfail');
+  return '';
+}
+
+function readBookings() {
+  const t = SpreadsheetApp.getActive().getSheetByName(TAB_TEMPAHAN);
+  if (!t || t.getLastRow() < 2) return [];
+  return t.getRange(2, 1, t.getLastRow() - 1, HEADERS.length).getValues().map((r, i) => ({
+    row: i + 2, kod: String(r[0]), masa: r[1] instanceof Date ? Utilities.formatDate(r[1], TZ, 'yyyy-MM-dd HH:mm') : '',
+    nama: String(r[2]), telefon: String(r[3]), masuk: toIso(r[4]), keluar: toIso(r[5]),
+    malam: Number(r[6]) || 0, tetamu: Number(r[7]) || 0, jumlah: Number(r[8]) || 0,
+    nota: String(r[9]), status: String(r[10]).trim()
+  })).filter(b => b.kod);
+}
+
+function readBlocks() {
+  const b = SpreadsheetApp.getActive().getSheetByName(TAB_BLOK);
+  if (!b || b.getLastRow() < 2) return [];
+  return b.getRange(2, 1, b.getLastRow() - 1, 3).getValues().map((r, i) => ({
+    row: i + 2, mula: toIso(r[0]), akhir: toIso(r[1]) || toIso(r[0]), sebab: String(r[2])
+  })).filter(x => x.mula);
+}
+
+function adminAction(d) {
+  const err = checkPin(d.pin);
+  if (err) return json({ ok: false, error: err });
+
+  if (d.action === 'list') {
+    return json({ ok: true, bookings: readBookings(), blocks: readBlocks(), today: toIso(new Date()), harga: HARGA_SEMALAM });
+  }
+
+  if (d.action === 'status') {
+    const status = String(d.status);
+    if (STATUS.indexOf(status) === -1) return json({ ok: false, error: 'Status tidak sah' });
+    const all = readBookings();
+    const b = all.filter(x => x.kod === String(d.kod))[0];
+    if (!b) return json({ ok: false, error: 'Tempahan tidak dijumpai' });
+    if (status === 'Disahkan') {
+      const clash = all.filter(x => x.kod !== b.kod && x.status === 'Disahkan' && overlap(b.masuk, b.keluar, x.masuk, x.keluar))[0];
+      if (clash) return json({ ok: false, error: 'Tarikh ini bertindih dengan tempahan ' + clash.kod + ' (' + clash.nama + ') yang sudah disahkan.' });
+      const blk = readBlocks().filter(x => overlap(b.masuk, b.keluar, x.mula, nextDay(x.akhir)))[0];
+      if (blk) return json({ ok: false, error: 'Tarikh ini bertindih dengan tarikh yang diblok' + (blk.sebab ? ' (' + blk.sebab + ')' : '') + '.' });
+    }
+    SpreadsheetApp.getActive().getSheetByName(TAB_TEMPAHAN).getRange(b.row, COL.status).setValue(status);
+    return json({ ok: true });
+  }
+
+  if (d.action === 'block') {
+    if (!isoOk(d.mula) || !isoOk(d.akhir) || d.akhir < d.mula) return json({ ok: false, error: 'Tarikh tidak sah. Tarikh akhir mesti sama atau selepas tarikh mula.' });
+    SpreadsheetApp.getActive().getSheetByName(TAB_BLOK).appendRow([toDate(d.mula), toDate(d.akhir), safe(clean(d.sebab, 120))]);
+    const clash = readBookings().filter(x => x.status === 'Disahkan' && overlap(d.mula, nextDay(d.akhir), x.masuk, x.keluar))[0];
+    return json({ ok: true, warning: clash ? 'Perhatian: ada tempahan disahkan (' + clash.kod + ', ' + clash.nama + ') dalam tempoh ini.' : '' });
+  }
+
+  if (d.action === 'unblock') {
+    const blk = readBlocks().filter(x => x.row === Number(d.row) && x.mula === d.mula)[0];
+    if (!blk) return json({ ok: false, error: 'Tarikh blok tidak dijumpai. Sila muat semula.' });
+    SpreadsheetApp.getActive().getSheetByName(TAB_BLOK).deleteRow(blk.row);
+    return json({ ok: true });
+  }
+
+  return json({ ok: false, error: 'Arahan tidak dikenali' });
 }
 
 function json(obj) {
